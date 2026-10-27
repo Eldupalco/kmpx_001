@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        String       @default("user")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[]
+  schedules   Schedule[]
+
+  @@map("users")
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleId   String?
+  schedule     Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  date         String    // YYYY-MM-DD
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  status       String    @default("present") // present | late | absent | half_day | on_leave
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("attendances")
+}
+
+model Schedule {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int          // 1 = Monday, 2 = Tuesday, ... 7 = Sunday
+  startTime   String       // e.g. "09:00"
+  endTime     String       // e.g. "17:00"
+  shiftName   String?      // e.g. "Standard Shift", "Morning", "Night"
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[]
+
+  @@map("schedules")
+}
