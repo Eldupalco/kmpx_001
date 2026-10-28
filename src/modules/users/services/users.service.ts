@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma/prisma.service.js';
+import { hashPassword } from '../../../common/utils/password.util.js';
 import { User } from '../models/user.entity.js';
 import { CreateUserDto } from '../dto/create-user.dto.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
@@ -28,6 +29,22 @@ export class UsersService {
     return user as User;
   }
 
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  async findByIdWithPassword(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     const existing = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
@@ -38,11 +55,13 @@ export class UsersService {
       );
     }
 
+    const hashedPassword = await hashPassword(createUserDto.password);
+
     return this.prisma.user.create({
       data: {
         name: createUserDto.name,
         email: createUserDto.email,
-        password: createUserDto.password,
+        password: hashedPassword,
         role: createUserDto.role ?? 'user',
       },
     }) as Promise<User>;
@@ -62,11 +81,16 @@ export class UsersService {
       }
     }
 
+    const hashedPassword = updateUserDto.password
+      ? await hashPassword(updateUserDto.password)
+      : undefined;
+
     return this.prisma.user.update({
       where: { id },
       data: {
         ...(updateUserDto.name !== undefined && { name: updateUserDto.name }),
         ...(updateUserDto.email !== undefined && { email: updateUserDto.email }),
+        ...(hashedPassword !== undefined && { password: hashedPassword }),
         ...(updateUserDto.role !== undefined && { role: updateUserDto.role }),
       },
     }) as Promise<User>;

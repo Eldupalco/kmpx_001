@@ -6,14 +6,21 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service.js';
 import { CreateUserDto } from '../dto/create-user.dto.js';
 import { UpdateUserDto } from '../dto/update-user.dto.js';
 import { UserResponseDto } from '../views/user-response.dto.js';
+import { AuthGuard } from '../../auth/guards/auth.guard.js';
+import { RolesGuard } from '../../../common/guards/roles.guard.js';
+import { Roles } from '../../../common/decorators/roles.decorator.js';
 
 @ApiTags('users')
+@ApiBearerAuth()
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

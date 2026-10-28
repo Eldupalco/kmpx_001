@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
 
@@ -10,12 +11,14 @@ async function main() {
   await prisma.schedule.deleteMany();
   await prisma.user.deleteMany();
 
-  // 2. Create Users
+  // 2. Create Users with Argon2 hashed passwords
+  const passwordHash = await argon2.hash('password!@##');
+
   const alice = await prisma.user.create({
     data: {
       name: 'Alice Johnson',
       email: 'alice@example.com',
-      password: 'hashed_password_123',
+      password: passwordHash,
       role: 'admin',
     },
   });
@@ -24,7 +27,7 @@ async function main() {
     data: {
       name: 'Bob Smith',
       email: 'bob@example.com',
-      password: 'hashed_password_456',
+      password: passwordHash,
       role: 'user',
     },
   });
@@ -33,7 +36,7 @@ async function main() {
     data: {
       name: 'Charlie Davis',
       email: 'charlie@example.com',
-      password: 'hashed_password_789',
+      password: passwordHash,
       role: 'user',
     },
   });
